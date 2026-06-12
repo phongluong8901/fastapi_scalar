@@ -1,0 +1,73 @@
+// Định nghĩa các bảng
+Table delivery_partner {
+  id uuid [pk]
+  name varchar
+  email varchar
+  created_at timestamp
+  max_handling_capacity integer
+}
+
+Table location {
+  zip_code integer [pk]
+}
+
+Table servicable_location {
+  partner_id uuid [ref: > delivery_partner.id]
+  location_id integer [ref: > location.zip_code]
+  indexes {
+    (partner_id, location_id) [pk]
+  }
+}
+
+Table shipment {
+  id uuid [pk]
+  created_at timestamp
+  client_contact_email varchar
+  client_contact_phone varchar
+  content varchar
+  weight float
+  destination integer [ref: > location.zip_code]
+  estimated_delivery timestamp
+  seller_id uuid [ref: > seller.id]
+  delivery_partner_id uuid [ref: > delivery_partner.id]
+}
+
+Table seller {
+  id uuid [pk]
+  name varchar
+  email varchar
+  address varchar
+  zip_code integer
+  created_at timestamp
+}
+
+Table shipment_event {
+  id uuid [pk]
+  created_at timestamp
+  location integer
+  status varchar
+  description varchar
+  shipment_id uuid [ref: > shipment.id]
+}
+
+Table tag {
+  id uuid [pk]
+  name varchar
+  instruction varchar
+}
+
+Table shipment_tag {
+  shipment_id uuid [ref: > shipment.id]
+  tag_id uuid [ref: > tag.id]
+  indexes {
+    (shipment_id, tag_id) [pk]
+  }
+}
+
+Table review {
+  id uuid [pk]
+  created_at timestamp
+  rating integer
+  comment varchar
+  shipment_id uuid [ref: > shipment.id]
+}

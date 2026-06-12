@@ -1,0 +1,198 @@
+#---github
+https://github.com/mulaRahul/fastship.git
+
+#--- sudo
+sudo apt update
+sudo apt install python3-pip
+sudo apt install python3.12-venv
+
+#--- install
+pip install fastapi uvicorn
+pip install scalar-fastapi
+pip install "fastapi[standard]"
+pip install sqlmodel
+pip install pydantic-settings
+pip install pydantic-settings asyncpg
+sudo apt install pythonpy
+pip install passlib
+pip install pyjwt
+
+pip install redis[hiredis]
+
+pip install alembic
+
+
+#--- venv
+python3 -m venv ./venv
+source ./venv/bin/activate
+
+#--- run
+
+-- cd proj_1
+uvicorn main:app --reload
+-> http://127.0.0.1:8000/scalar
+
+-- nhin ro file 
+fastapi dev
+
+-- run tai ngoai
+fastapi dev proj_1/app/main.py
+
+-- run tai ngoai 1
+fastapi dev proj_1/app/main.py
+
+-- run tai ngoai 2
+fastapi dev proj_2/app/main.py
+
+-- run tai ngoai 3
+fastapi dev proj_3/app/main.py
+
+-- run tai ngoai 4
+fastapi dev proj_4/app/main.py
+
+-- run tai ngoai 5
+fastapi dev app/main.py
+
+-- test connext postgresql
+python proj_1/app2/test_db.py
+
+#--- git
+
+git config --global user.name "phongluong8901"
+git config --global user.email "phongluong3366@gmail.com"
+
+git add .
+git commit -m "08/06/2026"
+git push
+
+git checkout -b "day_1"
+git branch
+git push origin -u day_1
+
+#--- fastapi (wsl) connect pg4admin (windows) -> tim host
+mbw2025@MBW-PC-22:~/fastapi_2$ cat /etc/resolv.conf | grep nameserver | awk '{print $2}'
+10.255.255.254
+
+#--- tim env
+find ~ -name ".env"
+
+#--- mo ket noi wsl - windows port 5432
+1. Tạo "Inbound Rule" cho Tường lửa Windows
+Để cho phép WSL (nằm trong dải mạng ảo) kết nối tới PostgreSQL trên Windows, hãy làm theo các bước:
+
+Nhấn phím Windows, gõ "Windows Defender Firewall with Advanced Security" và mở nó lên.
+
+Ở cột bên trái, chọn Inbound Rules.
+
+Ở cột bên phải, chọn New Rule...
+
+Chọn Port > nhấn Next.
+
+Chọn TCP, nhập 5432 vào ô Specific local ports > nhấn Next.
+
+Chọn Allow the connection > nhấn Next.
+
+Tích chọn cả 3 ô (Domain, Private, Public) > nhấn Next.
+
+Đặt tên (ví dụ: PostgreSQL_WSL) > nhấn Finish.
+
+Để biết IP chính xác, trong CMD Windows, gõ ipconfig.
+
+-- tiep theo
+Cách sửa file pg_hba.conf trên Windows
+Tìm file: Đường dẫn thường là:
+C:\Program Files\PostgreSQL\<version>\data\pg_hba.conf
+(Nếu không thấy, hãy mở pgAdmin4, vào menu Tools > Server Configuration > pg_hba.conf để xem đường dẫn chính xác).
+
+Sửa file: Mở file này bằng Notepad (phải chạy Notepad với quyền Administrator).
+
+Thêm dòng sau vào cuối file:
+Tìm đoạn có ghi IPv4 local connections và thêm dòng này vào dưới:
+
+Plaintext
+
+
+host    all             all             172.26.80.0/20          md5
+Giải thích: Dòng này cho phép mọi máy trong dải mạng của WSL (172.26.80.x) được quyền kết nối tới bất kỳ database nào, với điều kiện phải cung cấp mật khẩu (md5).
+
+Lưu file và Restart:
+
+Lưu lại file pg_hba.conf.
+
+Vào Services (gõ services.msc trong Windows) -> Tìm dịch vụ postgresql-x64-... -> Chuột phải chọn Restart.
+
+#--- xoa file .identifier
+Mở file .vscode/settings.json trong dự án của bạn (nếu chưa có thì tạo mới).
+
+Thêm đoạn cấu hình này vào:
+
+JSON
+
+
+{
+    "files.exclude": {
+        "**/*:Zone.Identifier": true
+    }
+}
+Kết quả: Các tệp Zone.Identifier vẫn còn đó (để hệ điều hành không bị lỗi), nhưng toàn bộ môi trường làm việc của bạn trong VS Code sẽ hoàn toàn sạch sẽ, không còn nhìn thấy chúng nữa. Đây là cách mà các lập trình viên chuyên nghiệp thường dùng khi làm việc trên môi trường Windows/WSL để tránh bị rối mắt bởi metadata của hệ thống.
+
+#--- xoa file .identifier khoi git
+Các bước thực hiện:
+
+Mở tệp .gitignore ở thư mục gốc của dự án.
+
+Thêm dòng này vào cuối file:
+
+Plaintext
+
+# Loại bỏ metadata Windows
+*:Zone.Identifier
+Lưu tệp lại.
+
+#--- alembic version cho DB (dung tai proj_4)
+python -m alembic upgrade head
+
+python -m alembic stamp head
+
+-- check cac version
+python -m alembic current
+
+-- migration moi
+python -m alembic revision --autogenerate -m "tên_thay_đổi"
+
+-- cap nhat
+python -m alembic upgrade head
+
+#--- mailtrap
+https://mailtrap.io/sandboxes/4285305/settings
+
+#--- twilio
+https://console.twilio.com/
+
+Sau khi đăng nhập vào Console (trang quản trị):
+
+TWILIO_SID (Account SID): Bạn sẽ thấy ngay trên trang chủ (Dashboard) của Console, mục "Account Info".
+
+TWILIO_AUTH_TOKEN: Cũng nằm trong mục "Account Info" trên Dashboard. Lưu ý: Bạn cần nhấn vào biểu tượng con mắt hoặc nút "View" để hiện mã này.
+
+TWILIO_NUMBER: Bạn cần mua hoặc lấy một số điện thoại thử nghiệm (Trial Number). Vào mục Phone Numbers -> Manage -> Active numbers. Nếu chưa có, bạn nhấn nút "Get a trial phone number" để hệ thống cấp cho bạn một số điện thoại (có dạng +123456789).
+
+
+#--- docker 
+
+
+#--- start proj
+cd proj_5_final/fastship
+run docker
+
+-- BE
+cd backend
+docker compose up
+
+-- FE
+cd frontend
+npm install
+npm run start
+
+#--- DBML diagram models
+https://dbdiagram.io/d/golang-simple-bank-69c0a18278c6c4bc7a405780

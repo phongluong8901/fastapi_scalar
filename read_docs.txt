@@ -1,0 +1,345 @@
+#--- path parameters
+-- typehint
+Tại sao Type Hints lại quan trọng?
+FastAPI sử dụng Type Hints để thực hiện 3 nhiệm vụ chính:
+
+Tự động tạo tài liệu (Automatic Documentation): FastAPI sử dụng Type Hints để tự động tạo tài liệu tương tác (Swagger UI tại /docs và ReDoc tại /redoc).
+
+Xác thực dữ liệu (Data Validation): Nếu người dùng gửi dữ liệu sai kiểu (ví dụ: yêu cầu số nguyên nhưng gửi chuỗi), FastAPI sẽ tự động trả về lỗi 422 Unprocessable Entity kèm mô tả chi tiết.
+
+Chuyển đổi kiểu dữ liệu (Data Conversion): FastAPI tự động chuyển đổi dữ liệu từ request (thường là string hoặc JSON) sang kiểu Python bạn đã định nghĩa.
+
+Hỗ trợ trình soạn thảo (Editor Support): Giúp bạn nhận được gợi ý mã (autocomplete) và kiểm tra lỗi ngay khi đang viết code (như trong VS Code, PyCharm).
+
+Python
+
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: int, q: str = None):
+    return {"item_id": item_id, "query": q}
+item_id: int: Bạn khai báo item_id phải là một số nguyên. FastAPI sẽ tự động ép kiểu từ đường dẫn (path parameter) sang int. Nếu người dùng nhập vào /items/abc, FastAPI sẽ báo lỗi ngay lập tức.
+
+q: str = None: Bạn khai báo q là một chuỗi tùy chọn (tùy chọn vì có giá trị mặc định là None).
+
+Các kiểu Type Hints thường dùng trong FastAPI
+Kiểu dữ liệu cơ bản: int, str, float, bool.
+
+Pydantic Models: Dùng để định nghĩa cấu trúc của Request Body.
+
+Python
+
+
+from pydantic import BaseModel
+
+class User(BaseModel):
+    username: str
+    age: int
+Kiểu dữ liệu phức tạp (từ thư viện typing):
+
+List[str]: Danh sách các chuỗi.
+
+Optional[int]: Một giá trị số nguyên hoặc None (tương đương int | None trong Python 3.10+).
+
+Dict[str, int]: Một từ điển với key là chuỗi và value là số nguyên.
+
+-- decorator
+Trong FastAPI, decorator là một tính năng của Python (được bắt đầu bằng ký tự @) được dùng để "đánh dấu" các hàm và cho FastAPI biết cách xử lý chúng.
+
+Nói một cách đơn giản: Decorator giúp bạn gắn các hàm Python vào các đường dẫn (URL) hoặc các sự kiện cụ thể của ứng dụng.
+
+Vai trò của Decorator trong FastAPI
+Decorator đóng vai trò là "cầu nối" giữa logic của bạn và Web Server.
+
+1. Định nghĩa Path Operations (Các đường dẫn)
+Đây là cách phổ biến nhất. Decorator dùng để khai báo phương thức HTTP (GET, POST, PUT, DELETE,...) và đường dẫn (path) tương ứng.
+
+Python
+
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+# Decorator @app.get cho biết hàm này xử lý yêu cầu GET tại đường dẫn "/"
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+2. Xử lý các sự kiện vòng đời (Lifecycle Events)
+Decorator giúp bạn chạy các hàm khởi tạo hoặc dọn dẹp khi ứng dụng bắt đầu hoặc tắt.
+
+Python
+
+
+@app.on_event("startup")
+async def startup_event():
+    # Kết nối cơ sở dữ liệu ở đây
+    print("Ứng dụng đã khởi động")
+3. Phụ thuộc (Dependencies) và Bảo mật
+Decorator cũng được dùng để gắn các bộ lọc hoặc kiểm tra bảo mật (ví dụ: yêu cầu người dùng phải đăng nhập mới được truy cập hàm đó).
+
+Python
+
+
+@app.get("/items/", dependencies=[Depends(verify_token)])
+async def read_items():
+    return [{"item": "Foo"}]
+
+#--- query parameters
+
+#--- CRUD operation
+
+#--- pydantic model
+Pydantic model là cách chính để định nghĩa cấu trúc dữ liệu trong FastAPI. Nếu coi FastAPI là "người vận chuyển" dữ liệu, thì Pydantic model chính là "khuôn mẫu" (schema) để kiểm tra xem dữ liệu đó có hợp lệ hay không.
+
+Nói cách khác, Pydantic đảm nhận việc phân tích (parsing) và xác thực (validation) dữ liệu đầu vào.
+
+Tại sao Pydantic quan trọng?
+Khi bạn làm việc với API, bạn nhận được dữ liệu (thường là JSON) từ người dùng. Pydantic giúp bạn:
+
+Xác thực dữ liệu: Đảm bảo id là số nguyên, email có định dạng đúng, hoặc một trường bắt buộc không được để trống. Nếu sai, nó tự động báo lỗi 422.
+
+Chuyển đổi kiểu (Type Casting): Nếu người dùng gửi số 1 dưới dạng chuỗi "1", Pydantic sẽ tự động chuyển nó thành số nguyên 1 cho bạn.
+
+Hỗ trợ IDE: Vì Pydantic dùng Type Hints, trình soạn thảo của bạn sẽ hiểu được các trường dữ liệu, giúp tự động gợi ý code (autocomplete) cực kỳ chính xác.
+
+Ví dụ về Pydantic Model
+Để định nghĩa một Pydantic model, bạn kế thừa từ BaseModel:
+
+Python
+
+
+from pydantic import BaseModel, EmailStr
+
+# Định nghĩa cấu trúc dữ liệu cho một User
+class User(BaseModel):
+    id: int
+    username: str
+    email: EmailStr  # Pydantic sẽ tự kiểm tra định dạng email
+    is_active: bool = True  # Giá trị mặc định
+Cách Pydantic hoạt động trong FastAPI
+FastAPI sẽ tự động sử dụng Pydantic model để xử lý Request Body (thường trong phương thức POST hoặc PUT):
+
+Python
+
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/users/")
+async def create_user(user: User):
+    # 'user' ở đây đã là một đối tượng Pydantic hoàn chỉnh
+    # Mọi dữ liệu đã được xác thực an toàn
+    return {"message": "User created", "data": user}
+Các tính năng mạnh mẽ khác
+Lồng ghép (Nested Models): Bạn có thể dùng một model làm kiểu dữ liệu cho một trường của model khác.
+
+Python
+
+
+class Post(BaseModel):
+    title: str
+    author: User  # Lồng model User vào trong model Post
+
+-- Enum
+Trong lập trình, Enum (viết tắt của Enumeration - Kiểu liệt kê) là một cách để định nghĩa một tập hợp các giá trị hằng số có tên gọi rõ ràng, thay vì sử dụng các giá trị rời rạc như chuỗi (string) hay số nguyên (integer) thông thường.
+
+Hãy tưởng tượng bạn đang viết code xử lý trạng thái đơn hàng. Thay vì dùng số 1, 2, 3 hay chuỗi "pending", "shipped" (rất dễ gõ sai), bạn dùng Enum.
+
+Tại sao nên dùng Enum?
+Tránh lỗi chính tả: Khi bạn gõ sai tên biến, trình soạn thảo (IDE) sẽ báo lỗi ngay lập tức thay vì để chương trình chạy với giá trị sai.
+
+Code dễ đọc hơn (Readability): OrderStatus.PENDING mang ý nghĩa rõ ràng hơn nhiều so với việc kiểm tra status == "pending".
+
+Hỗ trợ gợi ý (Autocomplete): Khi bạn gõ OrderStatus., IDE sẽ hiện ra danh sách các trạng thái hợp lệ.
+
+Tập trung dữ liệu: Tất cả các lựa chọn khả thi đều nằm chung trong một nhóm.
+
+Cách sử dụng Enum trong Python (với FastAPI)
+Trong Python, bạn sử dụng lớp Enum từ thư viện tiêu chuẩn enum.
+
+Python
+
+
+from enum import Enum
+from fastapi import FastAPI
+
+# Định nghĩa Enum
+class Role(str, Enum):
+    admin = "admin"
+    user = "user"
+    guest = "guest"
+
+app = FastAPI()
+
+@app.get("/users/{role}")
+async def get_users(role: Role):
+    # Nếu người dùng truyền vào giá trị không có trong Enum, 
+    # FastAPI sẽ tự động trả về lỗi 422
+    if role == Role.admin:
+        return {"message": "Chào sếp!"}
+    return {"message": f"Chào người dùng với quyền: {role}"}
+    
+
+#--- sql database
+-- server lifespan
+Trong FastAPI, server lifespan là một tính năng cho phép bạn quản lý các tài nguyên cần được thiết lập (setup) khi ứng dụng khởi động và giải phóng (teardown) khi ứng dụng tắt.
+
+Cơ chế này được thực hiện thông qua một hàm lifespan (thường là một trình tạo - generator).
+
+Cách hoạt động
+Hàm lifespan hoạt động theo cấu trúc:
+
+Phần trước yield: Chạy một lần duy nhất khi server bắt đầu khởi động. Đây là nơi bạn mở kết nối database, tải các mô hình machine learning hoặc thiết lập các biến dùng chung.
+
+yield: Điểm trung gian, ứng dụng bắt đầu xử lý các request của người dùng.
+
+Phần sau yield: Chạy một lần duy nhất khi server dừng lại. Đây là nơi bạn đóng kết nối database hoặc dọn dẹp tài nguyên để tránh rò rỉ bộ nhớ.
+
+Ví dụ minh họa
+Dưới đây là cách sử dụng lifespan để quản lý kết nối database giả định:
+
+Python
+
+
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+# Giả lập database
+ml_models = {}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- Startup: Thiết lập tài nguyên ---
+    print("Đang khởi động: Kết nối database...")
+    ml_models["answer_machine"] = "Dữ liệu mô hình đã được nạp"
+    
+    yield
+    
+    # --- Shutdown: Dọn dẹp tài nguyên ---
+    print("Đang tắt: Ngắt kết nối database...")
+    ml_models.clear()
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/")
+def read_root():
+    return {"message": "Ứng dụng đang chạy", "model": ml_models["answer_machine"]}
+Tại sao nên sử dụng Lifespan?
+Hiệu năng: Tránh việc phải mở/đóng kết nối database liên tục trong mỗi request.
+
+Quản lý bộ nhớ: Đảm bảo các tiến trình chạy ngầm hoặc kết nối TCP được giải phóng đúng cách khi ứng dụng dừng, giúp tránh lỗi "đọng" tiến trình trên server.
+
+Khởi tạo tài nguyên nặng: Các tác vụ như load model AI (thường mất vài giây đến vài phút) chỉ nên thực hiện một lần khi khởi động, thay vì thực hiện mỗi khi có request gửi đến.
+
+
+--
+Trong Python, Annotated (nằm trong thư viện typing) là một công cụ mạnh mẽ được dùng để gắn thêm siêu dữ liệu (metadata) vào các kiểu dữ liệu (type hints).
+
+Thay vì chỉ định nghĩa biến đó là kiểu gì (ví dụ: int, str), bạn có thể thêm các thông tin bổ sung để các công cụ kiểm tra lỗi (type checkers) hoặc thư viện xử lý (như FastAPI, Pydantic) hiểu rõ hơn về giá trị đó.
+
+Cấu trúc cơ bản
+Annotated có cú pháp: Annotated[T, x], trong đó:
+
+T: Kiểu dữ liệu gốc (int, str, list,...).
+
+x: Các chú thích (metadata) bổ sung.
+
+Tại sao cần sử dụng Annotated?
+Thông thường, khi bạn viết age: int, Python chỉ biết đó là số nguyên. Nhưng với Annotated, bạn có thể nói với chương trình rằng: "Đây là số nguyên, nhưng nó phải nằm trong khoảng từ 18 đến 100".
+
+Ví dụ thực tế với FastAPI:
+FastAPI sử dụng Annotated để giảm bớt mã thừa. Thay vì viết Query(...) hoặc Path(...) bên trong các tham số hàm, bạn có thể đưa chúng vào kiểu dữ liệu:
+
+Python
+
+
+from typing import Annotated
+from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+# Thay vì: q: str = Query(..., min_length=3)
+# Ta dùng Annotated để tách biệt logic kiểu dữ liệu và logic cấu hình
+@app.get("/items/")
+async def read_items(
+    q: Annotated[str, Query(min_length=3, max_length=50)]
+):
+    return {"q": q}
+Các lợi ích chính
+Code gọn gàng hơn: Gom nhóm các cấu hình (validate, description, default values) trực tiếp vào kiểu dữ liệu.
+
+Tính tái sử dụng cao: Bạn có thể định nghĩa một kiểu dữ liệu riêng biệt và dùng lại ở nhiều nơi.
+
+Ví dụ: StringTuoi = Annotated[int, Ge(18)] -> Bạn có thể dùng StringTuoi cho mọi hàm cần validate tuổi.
+
+
+#--- sql model
+
+#--- sql postgresql
+
+#--- alembic - database migrations
+Đúng chính xác! Đó là cơ chế Autogenerate của Alembic.
+
+Khi bạn chạy lệnh revision --autogenerate, Alembic sẽ thực hiện một quy trình so sánh thông minh như sau:
+
+Chụp ảnh (Snapshot) Database hiện tại: Alembic truy vấn Database của bạn để lấy cấu trúc của các bảng hiện có (cột, kiểu dữ liệu, khóa chính, khóa ngoại).
+
+So sánh với Model trong code: Nó nạp các Model bạn đã định nghĩa trong SQLModel (mà bạn đã import trong env.py).
+
+Đối chiếu (Comparison): Nó so sánh giữa "Cấu trúc thực tế trong Database" và "Cấu trúc mong muốn trong Code".
+
+Tạo Script: Nếu thấy sự khác biệt, nó sẽ tự động viết các lệnh SQL (như ADD COLUMN, ALTER TYPE, CREATE TABLE) vào một file Python mới.
+
+Tại sao nó "thông minh" đến thế?
+Nó nhận diện thay đổi: Nó biết khi nào bạn đổi kiểu dữ liệu (từ Integer sang UUID), thêm cột mới, hoặc tạo một bảng mới.
+
+Nó bỏ qua những thứ không liên quan: Nếu bạn chỉ thay đổi logic code trong FastAPI nhưng không đụng đến các thuộc tính của SQLModel, nó sẽ báo "No changes detected".
+
+#--- delivery partner
+1. Delivery Partner là gì trong hệ thống của bạn?
+Trong các hệ thống Logistics/E-commerce, Delivery Partner (Đối tác vận chuyển) thường là:
+
+Các đơn vị giao hàng: Ví dụ: Giao Hàng Nhanh, Giao Hàng Tiết Kiệm, Ninja Van, Viettel Post...
+
+Đối tượng kết nối: Hệ thống của bạn cần lưu thông tin đối tác để chọn đơn vị vận chuyển cho mỗi Shipment (Đơn hàng/Kiện hàng).
+
+#--- send mail
+
+#--- SMS
+
+#--- REview
+
+
+#--- Celery
+Trong kiến trúc ứng dụng FastAPI, Celery là một thư viện hỗ trợ thực hiện các tác vụ chạy ngầm (Background Tasks/Asynchronous Tasks).
+
+Hãy hình dung: FastAPI giống như một nhà hàng (chỉ chuyên nhận order và phục vụ nhanh), còn Celery giống như một "nhà bếp" tách biệt (chuyên làm các món ăn mất nhiều thời gian).
+
+1. Tại sao cần Celery trong FastAPI?
+Khi bạn thực hiện một công việc mất nhiều thời gian trên FastAPI (như gửi email, xử lý ảnh, tạo file PDF, hoặc gọi API bên thứ ba như Twilio), nếu bạn xử lý trực tiếp trong hàm router:
+
+API sẽ bị "đơ" (block) và không nhận thêm request mới được.
+
+Người dùng phải chờ rất lâu (làm giảm trải nghiệm).
+
+Celery giải quyết vấn đề này bằng cách đẩy các tác vụ nặng đó ra một tiến trình riêng biệt.
+
+--
+2. Mô hình hoạt động
+Để chạy được Celery, bạn cần 3 thành phần chính:
+
+FastAPI (Producer): Nhận request từ người dùng và đẩy "yêu cầu công việc" vào hàng đợi.
+
+Message Broker (Redis hoặc RabbitMQ): Nơi chứa hàng đợi các yêu cầu đó.
+
+Celery Worker (Consumer): Một tiến trình chạy ngầm liên tục lấy yêu cầu từ hàng đợi ra để xử lý.
+
+#--- Manay to many
+
+#--- py test

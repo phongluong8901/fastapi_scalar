@@ -1,0 +1,153 @@
+#---main
+1. Khởi tạo đối tượng app
+FastAPI đọc file main.py, khởi tạo đối tượng app và gán lifespan_handler vào tham số lifespan. Ở bước này, nó chưa chạy hàm gì cả, nó chỉ "ghi chú" rằng: "Khi nào khởi động thì nhớ chạy cái hàm này".
+
+2. Kích hoạt lifespan_handler (Giai đoạn Startup)
+Ngay khi FastAPI chuẩn bị bắt đầu, nó sẽ gọi hàm lifespan_handler.
+
+await create_db_tables(): Đây là dòng code đầu tiên được thực thi.
+
+Nó gọi hàm create_db_tables() trong session.py.
+
+Nó mở một kết nối (connection) thông qua engine.
+
+SQLAlchemy kiểm tra Database, nếu bảng Shipment chưa tồn tại, nó sẽ thực hiện lệnh CREATE TABLE để tạo bảng.
+
+Nếu bước này bị lỗi (ví dụ: sai mật khẩu Database), ứng dụng sẽ dừng lại ngay lập tức và báo lỗi Application startup failed.
+
+-- yeild
+2. "Dừng" ở yield nghĩa là gì?
+Ở đây, yield có 2 nhiệm vụ cực kỳ quan trọng:
+
+Nhiệm vụ 1: "Chốt chặn" (Gatekeeper): Nó báo cho FastAPI biết: "Phần chuẩn bị (Startup) đã xong hoàn toàn. Bây giờ, hãy mở cửa cho người dùng truy cập vào API."
+
+Nếu không có yield, FastAPI sẽ chạy xong create_db_tables rồi tắt ngấm ứng dụng vì nó nghĩ là không còn việc gì để làm nữa.
+
+Nhiệm vụ 2: "Trạng thái chờ" (Waiting mode): Tại yield, toàn bộ ứng dụng của bạn sẽ ở trạng thái "đang chạy" (Running). Nó giữ nguyên các kết nối, bộ nhớ, và các tài nguyên bạn đã tạo ở bước 1. Nó chờ đợi cho đến khi có tín hiệu Shutdown (ví dụ: bạn nhấn Ctrl+C).
+
+
+#--- create
+1. Luồng tiếp nhận (Router Layer)
+Khi người dùng gọi POST /shipment/ kèm dữ liệu JSON:
+
+FastAPI đọc dữ liệu đó và kiểm tra với class ShipmentCreate. Nếu hợp lệ, nó biến JSON thành một object shipment của Python.
+
+FastAPI kiểm tra tham số service: ServiceDep. Vì nó thấy Depends(get_shipment_service), nó sẽ kích hoạt hàm đó.
+
+2. Luồng chuẩn bị tài nguyên (Dependency Injection)
+Đây là lúc các hàm get_session và get_shipment_service phối hợp:
+
+get_session() bắt đầu chạy: Nó mở một kết nối tới database và yield session. Kết nối này được "giữ" lại để chờ dùng.
+
+get_shipment_service(session) được gọi: Nó nhận cái session đó, khởi tạo một ShipmentService(session) và trả về cho router.
+
+3. Luồng xử lý nghiệp vụ (Service Layer)
+Đến dòng await service.add(shipment) trong router:
+
+add nhận dữ liệu -> Tạo new_shipment bằng cách lấy các giá trị từ shipment_create + tính toán thời gian estimated_delivery + gán status=placed.
+
+self.session.add(new_shipment): Đưa đối tượng này vào hàng đợi của database session.
+
+await self.session.commit(): Lệnh này thực sự đẩy dữ liệu xuống PostgreSQL để lưu trữ.
+
+await self.session.refresh(new_shipment): Database trả về ID mới tạo, và lệnh này cập nhật id đó vào object new_shipment.
+
+4. Luồng phản hồi (Response Layer)
+Hàm add trả về object new_shipment đã có đầy đủ thông tin (cả id và thời gian).
+
+FastAPI thấy response_model=ShipmentRead: Nó kiểm tra xem object trả về có khớp với định nghĩa của ShipmentRead không (có đầy đủ id, status...), sau đó tự động biến object đó thành JSON để gửi về cho người dùng.
+
+-- an toan
+Sự tách biệt (Decoupling): Router không biết gì về Database. Nó chỉ biết gọi service. Service không biết gì về HTTP. Nó chỉ biết xử lý dữ liệu.
+
+Tính an toàn của yield: Nhờ yield trong get_session, nếu sau khi add xong mà có lỗi xảy ra, kết nối Database vẫn được đóng lại an toàn, không bị treo.
+
+Sử dụng Pydantic thông minh: Việc dùng ShipmentCreate và ShipmentRead kế thừa từ BaseShipment giúp bạn không bao giờ phải viết lại các trường trùng lặp (ví dụ: content, weight), làm cho code cực kỳ ngắn gọn.
+
+#--- get
+1. Bước Kích hoạt (Dependency Injection)
+Khi người dùng gọi API GET /?id=123, FastAPI nhìn vào tham số service: ServiceDep và thực hiện chuỗi phản ứng "Domino":
+
+FastAPI cần ServiceDep: Nó chạy hàm get_shipment_service.
+
+get_shipment_service cần SessionDep: Nó chạy hàm get_session.
+
+get_session: Mở kết nối Database và yield (cung cấp) một đối tượng session (kiểu AsyncSession).
+
+Khởi tạo: Hàm get_shipment_service nhận session đó, khởi tạo đối tượng ShipmentService(session) và trả về cho FastAPI.
+
+Bơm vào hàm: FastAPI gán đối tượng service đó vào tham số của hàm get_shipment.
+
+2. Bước Xử lý logic (Business Logic)
+Bây giờ bên trong hàm get_shipment:
+
+shipment = await service.get(id): Bạn gọi phương thức của lớp ShipmentService.
+
+Bên trong ShipmentService.get(): Nó sử dụng self.session (đã được FastAPI bơm vào từ bước 1) để truy vấn Database: await self.session.get(Shipment, id).
+
+Kết quả trả về là một đối tượng thuộc class Shipment (được định nghĩa với table=True, đại diện cho bảng dữ liệu trong DB).
+
+3. Bước Trả về dữ liệu (Data Validation & Response)
+Sau khi lấy được object shipment từ DB:
+
+Kiểm tra lỗi: Nếu shipment là None, nó trả về 404 Not Found.
+
+Response Model (ShipmentRead): FastAPI nhìn vào response_model=ShipmentRead trên router.
+
+Nó sẽ lọc dữ liệu của object shipment (vốn có rất nhiều thông tin) và chỉ lấy ra đúng những trường được định nghĩa trong ShipmentRead (id, status, estimated_delivery, và các trường từ BaseShipment).
+
+Việc này đảm bảo dữ liệu trả về cho client đúng cấu trúc và an toàn (ví dụ: không làm lộ các trường nhạy cảm trong DB).
+
+#--- update
+1. Luồng xử lý dữ liệu (Step-by-Step)
+Nhận yêu cầu (Request): Người dùng gửi một yêu cầu PATCH kèm theo ID và một JSON chỉ chứa những trường muốn thay đổi (ví dụ: chỉ thay đổi status).
+
+Validation (Pydantic): FastAPI tự động kiểm tra JSON người dùng gửi lên dựa trên class ShipmentUpdate.
+
+Vì các trường trong ShipmentUpdate đều có default=None, người dùng không bắt buộc phải gửi đủ mọi thông tin.
+
+Lọc dữ liệu (exclude_none=True):
+
+Dòng update = shipment_update.model_dump(exclude_none=True) cực kỳ quan trọng. Nó loại bỏ tất cả những trường có giá trị None ra khỏi từ điển update.
+
+Kết quả: Nếu người dùng chỉ gửi {"status": "delivered"}, từ điển update sẽ chỉ có đúng cặp key-value đó, không chứa estimated_delivery: None.
+
+Kiểm tra tính hợp lệ: Nếu từ điển update rỗng (người dùng gửi request rỗng), hệ thống trả về lỗi 400 Bad Request.
+
+Cập nhật dữ liệu (Business Logic):
+
+Hàm gọi service.update(id, update).
+
+Trong ShipmentService:
+
+shipment = await self.get(id): Lấy bản ghi hiện tại từ DB.
+
+shipment.sqlmodel_update(update): Phương thức này của SQLModel thông minh ở chỗ nó chỉ cập nhật những trường có trong từ điển update và giữ nguyên các giá trị cũ của những trường không được gửi lên.
+
+commit() và refresh(): Lưu các thay đổi vào DB và tải lại bản ghi mới nhất để trả về cho người dùng.
+
+--
+Bạn đang thấy sự hỗn loạn vì 2 quá trình này diễn ra ở 2 thời điểm khác nhau:
+
+Giai đoạn 1: Chế tạo (FastAPI Dependency Injection)
+Khi bạn khai báo service: ServiceDep ở tham số của hàm API:
+
+FastAPI thấy ServiceDep có Depends(get_shipment_service).
+
+Nó tự động chạy hàm get_shipment_service.
+
+Hàm này chạy xong, tạo ra một đối tượng thật (instance) của ShipmentService (có chứa kết nối DB bên trong).
+
+FastAPI "bơm" đối tượng thật này vào biến service của bạn.
+
+Giai đoạn 2: Sử dụng (Logic của bạn)
+Khi dòng code return await service.update(id, update) chạy:
+
+Bạn không còn tạo gì mới nữa.
+
+Bạn chỉ đang gọi method (.update) của cái đối tượng đã được "chế tạo" xong ở Giai đoạn 1.
+
+
+
+
+

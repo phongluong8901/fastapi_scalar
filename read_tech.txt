@@ -1,0 +1,127 @@
+#--- scalar_fastapi
+scalar_fastapi là một thư viện tích hợp giúp bạn tạo giao diện tài liệu API (API Documentation) cực kỳ hiện đại, đẹp mắt và dễ sử dụng cho các ứng dụng FastAPI.
+
+Nếu như mặc định FastAPI sử dụng Swagger UI (giao diện màu trắng/xanh quen thuộc), thì scalar_fastapi cung cấp một giải pháp thay thế với trải nghiệm người dùng (UX) giống như tài liệu của các dịch vụ chuyên nghiệp (như Stripe hay OpenAI).
+
+Tại sao nên dùng scalar_fastapi thay vì Swagger mặc định?
+Thiết kế hiện đại: Giao diện của Scalar trông sang trọng, tối giản và rất chuyên nghiệp. Nó giúp tài liệu dự án của bạn trông giống như một sản phẩm thương mại cao cấp.
+
+Trải nghiệm "Try it out" tốt hơn: Việc kiểm thử các endpoint (gửi request test) trực tiếp trên trình duyệt mượt mà và trực quan hơn.
+
+Khả năng tùy biến cao: Bạn có thể tùy chỉnh màu sắc, logo và bố cục để phù hợp với thương hiệu của công ty.
+
+Hỗ trợ đa ngôn ngữ: Hỗ trợ tạo các đoạn code mẫu (client code snippet) cho nhiều ngôn ngữ lập trình khác nhau (Python, JavaScript, Go, PHP,...) rất đầy đủ.
+
+#--- Twilio
+1. Twilio là gì?
+Twilio là một nền tảng truyền thông đám mây cung cấp các API cho phép ứng dụng của bạn:
+
+Gửi/Nhận SMS: Ví dụ: Gửi mã xác thực (OTP) hoặc thông báo đơn hàng cho khách.
+
+Gửi/Nhận Email: Thông qua Twilio SendGrid.
+
+Thực hiện/Nhận cuộc gọi: Tự động gọi điện thông báo hoặc tạo hệ thống trả lời tự động (IVR).
+
+Ứng dụng khác: WhatsApp Business, chat trực tuyến.
+
+Tóm lại: Nếu ứng dụng FastAPI của bạn cần "giao tiếp" với thế giới bên ngoài (qua điện thoại/tin nhắn), bạn sẽ dùng Twilio.
+
+--
+1. Cách Twilio tính phí
+Trả phí theo lượt sử dụng (Pay-as-you-go): Bạn không cần đóng tiền hàng tháng nếu không gửi tin nhắn. Bạn nạp tiền vào tài khoản Twilio (dạng Pre-paid - trả trước) và số dư sẽ bị trừ dần dựa trên số lượng tin nhắn bạn gửi.
+
+Chi phí mỗi tin nhắn: Giá mỗi tin nhắn SMS phụ thuộc vào:
+
+Quốc gia: Gửi tin nhắn đến số điện thoại Việt Nam (+84) sẽ có mức giá khác với Mỹ hay Singapore.
+
+Loại tin nhắn: Tin nhắn gửi từ "Long Code" (số điện thoại thường) khác với "Short Code" (số ngắn 5-6 số) hay "Sender ID" (tin nhắn thương hiệu).
+
+Phí nền tảng: Twilio còn thu phí thuê số điện thoại mỗi tháng (thường khoảng $1 - $1.15/tháng cho một số điện thoại).
+
+2. Chi phí gửi OTP (Mã xác thực)
+Nếu bạn dùng Twilio để gửi OTP, bạn có hai lựa chọn:
+
+SMS API: Bạn tự code logic gửi mã. Bạn chỉ trả phí cho mỗi tin nhắn SMS được gửi đi.
+
+Twilio Verify (Khuyên dùng): Đây là dịch vụ chuyên dụng để gửi OTP. Nó thông minh hơn vì:
+
+Tự động xử lý việc tạo mã, kiểm tra mã, và giới hạn số lần thử.
+
+Hỗ trợ gửi qua nhiều kênh (SMS, Voice call, Email).
+
+Tính phí: Thường tính theo mỗi lần xác thực thành công (verify thành công).
+
+#--- tempmailplus
+Temp Mail Plus là một loại dịch vụ cung cấp hòm thư điện tử (email) dùng một lần (tạm thời).
+
+Hãy tưởng tượng nó như một "hòm thư rác" an toàn mà bạn tạo ra trong vài giây để phục vụ một mục đích duy nhất, sau đó có thể vứt bỏ mà không cần lo lắng về việc bị spam hay lộ thông tin cá nhân.
+
+1. Temp Mail Plus hoạt động như thế nào?
+Tạo email ngay lập tức: Thay vì phải đăng ký tài khoản với Google hay Outlook, trang web sẽ cung cấp cho bạn một địa chỉ email ngẫu nhiên ngay khi bạn truy cập.
+
+Nhận thư: Bạn dùng địa chỉ này để đăng ký tài khoản trên các trang web, nhận mã xác thực (OTP), hoặc nhận link kích hoạt. Thư sẽ hiện ra ngay trong giao diện của trang web đó.
+
+Tự hủy: Sau một khoảng thời gian nhất định (thường là vài chục phút hoặc vài giờ), hòm thư này sẽ biến mất vĩnh viễn cùng với tất cả dữ liệu bên trong.
+
+2. Tại sao người ta dùng dịch vụ này?
+Tránh Spam: Khi bạn muốn tải một tài liệu, xem một nội dung nhưng trang web bắt phải đăng ký email, bạn dùng email tạm thời để không bị trang đó gửi quảng cáo làm phiền vào hòm thư thật.
+
+Bảo mật: Bạn không muốn cung cấp email chính chủ cho các trang web mà bạn cảm thấy không thực sự tin tưởng.
+
+Thử nghiệm nhanh: Dùng để đăng ký các dịch vụ dùng thử (free trial) nhiều lần bằng cách tạo nhiều email tạm thời.
+
+#--- render
+1. Cách Render xử lý các dịch vụ
+Thay vì cố gắng "nhét" mọi thứ vào 1 Docker container duy nhất, bạn nên chia dự án thành các dịch vụ riêng biệt trên Render:
+
+Web Service (FastAPI): Bạn kết nối kho lưu trữ GitHub của mình. Render sẽ tự động đọc Dockerfile trong project để build và chạy ứng dụng.
+
+PostgreSQL: Bạn tạo một "PostgreSQL Database" trực tiếp trên Render (bằng cách chọn "New" -> "PostgreSQL"). Render sẽ cung cấp cho bạn một Internal Connection URL.
+
+Redis: Bạn tạo một "Redis" service trên Render. Nó cũng cung cấp một đường dẫn kết nối.
+
+2. Các bước triển khai (Workflow)
+Chuẩn bị mã nguồn:
+
+Đảm bảo project của bạn có file Dockerfile và requirements.txt.
+
+Cấu hình biến môi trường (DATABASE_URL, REDIS_URL) để đọc từ file .env hoặc biến môi trường hệ thống. Không bao giờ hardcode mật khẩu trong code.
+
+Thiết lập PostgreSQL & Redis trên Render:
+
+Tạo Database và Redis trên dashboard của Render.
+
+Lấy thông tin kết nối (Connection String) mà Render cấp cho bạn.
+
+Cấu hình biến môi trường (Environment Variables):
+
+Vào phần Dashboard của Web Service (FastAPI) trên Render.
+
+Tìm mục Environment: Nhập DATABASE_URL (lấy từ database đã tạo ở bước 2) và REDIS_URL.
+
+Triển khai:
+
+Mỗi lần bạn git push code lên GitHub, Render sẽ tự động phát hiện, build lại Docker image và cập nhật ứng dụng của bạn lên server.
+
+#--- API gateway - aws
+
+1. API Gateway là gì trong AWS?
+Nó đóng vai trò như một "người gác cổng" đứng trước các Service của bạn (ví dụ: các hàm Lambda, hoặc ứng dụng FastAPI chạy trên ECS/EC2).
+
+Nhiệm vụ: Tiếp nhận request từ client (web/mobile), xử lý bảo mật (Authentication/Authorization), giới hạn tốc độ (Throttling), và chuyển tiếp request đến backend của bạn.
+
+Tại sao cần: Thay vì FastAPI của bạn phải lo các việc "râu ria" như kiểm tra API key, đo lường lưu lượng, hay chặn DDoS, bạn đẩy hết những việc đó cho AWS API Gateway.
+
+2. AWS CLI có vai trò gì ở đây?
+AWS CLI là công cụ dòng lệnh giúp bạn cấu hình và quản lý API Gateway mà không cần bấm chuột trên giao diện Web (Console).
+
+Ví dụ, thay vì bạn phải vào trình duyệt bấm hàng chục cái menu, bạn có thể chạy CLI:
+
+Tạo một API mới:
+aws apigateway create-rest-api --name 'MyLogisticAPI'
+
+Tạo tài nguyên (Resource) - ví dụ path /shipments:
+aws apigateway create-resource --rest-api-id <id> --parent-id <id> --path-part 'shipments'
+
+Triển khai (Deploy) API lên môi trường 'prod':
+aws apigateway create-deployment --rest-api-id <id> --stage-name 'prod'
